@@ -19,5 +19,9 @@ All the codes are supposed to be imported as modules into a _main_ `Python` scri
 
 See [Wiki](https://github.com/SchottkySpectroscopyIMP/data-analysis/wiki) for more explanations about the class methods and arguments.
 
+In addition, this repo is shipped with an extra script `synthetic.py` for test.
+By using that, one can produce synthetic `wv` files with customized artificial signals inside.
+Common waveforms include **sinusoids**, **rectangular** and **triangular pulses**, etc., as well as stochastic processes, such as **autoregressive processes** and **noise-corrupted sinusoids**. 
+
 ## License
 This repository is licensed under the **GNU GPLv3**.
