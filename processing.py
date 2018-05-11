@@ -149,7 +149,7 @@ class Processing(Preprocessing):
         padding_ratio:  >= 1, ratio of the full frame length after zero padding to the window length
                         note that the final frame length will be rounded up to the next power of base 2
                         any illegal values disable zero padding
-        half_bandwidth: half bandwidth in unit of fundamental frequency, a.k.a. NW preferably with integers
+        half_bandwidth: half bandwidth in units of fundamental frequency, a.k.a. NW preferably with integers
         n_taper:        number of tapering windows, a.k.a. K preferably with K < 2NW
         f_test:         whether to perform statistical test on the obtained spectrum for peak significance
         '''
@@ -186,7 +186,7 @@ class Processing(Preprocessing):
         padding_ratio:  >= 1, ratio of the full frame length after zero padding to the window length
                         note that the final frame length will be rounded up to the next power of base 2
                         any illegal values disable zero padding
-        half_bandwidth: half bandwidth in unit of fundamental frequency, a.k.a. NW preferably with integers
+        half_bandwidth: half bandwidth in units of fundamental frequency, a.k.a. NW preferably with integers
         n_taper:        number of tapering windows, a.k.a. K preferably with K < 2NW
         f_test:         whether to perform statistical test on the obtained spectrum for peak significance
         '''
@@ -241,26 +241,40 @@ class Processing(Preprocessing):
                         window:         to be chosen from ["bartlett", "blackman", "hamming", "hanning", "kaiser"]
                                         if None, a rectangular window is implied
                                         if "kaiser" is given, an additional argument of beta is expected
-                        half_bandwidth: half bandwidth in unit of fundamental frequency, a.k.a. NW preferably with integers
+                        half_bandwidth: half bandwidth in units of fundamental frequency, a.k.a. NW preferably with integers
                         n_taper:        number of tapering windows, a.k.a. K preferably with K < 2NW
         '''
         if estimator == 'p': # periodogram
-            frequencies, _, spectrogram, n_dof = self.periodogram_2d(window_length, n_average, n_offset, padding_ratio,
-                    kwargs["window"], kwargs["beta"])
-            # Bartlett's method for the boxcar window, Welch's method for all the others
-            if kwargs["window"] is not None:
-                spectrogram_suppl = self.periodogram_2d(window_length, n_average-1, n_offset+window_length//2, padding_ratio,
-                        kwargs["window"], kwargs["beta"])[2]
+            try: # Welch's method
+                if kwargs["window"] == "kaiser":
+                    try:
+                        frequencies, _, spectrogram, n_dof = self.periodogram_2d(window_length, n_average, n_offset, padding_ratio,
+                                kwargs["window"], kwargs["beta"])
+                        spectrogram_suppl = self.periodogram_2d(window_length, n_average-1, n_offset+window_length//2, padding_ratio,
+                                kwargs["window"], kwargs["beta"])[2]
+                    except KeyError:
+                        raise ValueError("additional argument beta is empty!")
+                else:
+                    frequencies, _, spectrogram, n_dof = self.periodogram_2d(window_length, n_average, n_offset, padding_ratio, kwargs["window"])
+                    spectrogram_suppl = self.periodogram_2d(window_length, n_average-1, n_offset+window_length//2, padding_ratio, kwargs["window"])[2]
                 spectrogram = np.vstack( (spectrogram, spectrogram_suppl[:spectrogram.shape[0]-1]) )
+            except KeyError: # Bartlett's method for the boxcar window
+                frequencies, _, spectrogram, n_dof = self.periodogram_2d(window_length, n_average, n_offset, padding_ratio)
             return (frequencies[:-1]+frequencies[1:])/2, np.mean(spectrogram, axis=0), n_dof*n_average # kHz, V^2/kHz, 1
         elif estimator == 'm': # multitaper
-            frequencies, _, spectrogram, n_dof = self.multitaper_2d(window_length, n_average, n_offset, padding_ratio,
-                    kwargs["half_bandwidth"], kwargs["n_taper"])
-            return (frequencies[:-1]+frequencies[1:])/2, np.mean(spectrogram, axis=0), n_dof*n_average # kHz, V^2/kHz, 1
+            try:
+                frequencies, _, spectrogram, n_dof = self.multitaper_2d(window_length, n_average, n_offset, padding_ratio,
+                        kwargs["half_bandwidth"], kwargs["n_taper"])
+                return (frequencies[:-1]+frequencies[1:])/2, np.mean(spectrogram, axis=0), n_dof*n_average # kHz, V^2/kHz, 1
+            except KeyError as e:
+                raise ValueError("additional argument {:s} is empty!".format(e.args[0]))
         elif estimator == 'a': # adaptive multitaper
-            frequencies, _, spectrogram, n_dof = self.adaptive_multitaper_2d(window_length, n_average, n_offset, padding_ratio,
-                    kwargs["half_bandwidth"], kwargs["n_taper"])
-            return (frequencies[:-1]+frequencies[1:])/2, np.average(spectrogram, axis=0, weights=n_dof), np.sum(n_dof, axis=0) # kHz, V^2/kHz, 1
+            try:
+                frequencies, _, spectrogram, n_dof = self.adaptive_multitaper_2d(window_length, n_average, n_offset, padding_ratio,
+                        kwargs["half_bandwidth"], kwargs["n_taper"])
+                return (frequencies[:-1]+frequencies[1:])/2, np.average(spectrogram, axis=0, weights=n_dof), np.sum(n_dof, axis=0) # kHz, V^2/kHz, 1
+            except KeyError as e:
+                raise ValueError("additional argument {:s} is empty!".format(e.args[0]))
         else:
             raise ValueError("unrecognized identifier {:s} for the base estimator!".format(estimator))
 
@@ -461,7 +475,7 @@ class Processing(Preprocessing):
         padding_ratio:  >= 1, ratio of the full frame length after zero padding to the window length
                         note that the final frame length will be rounded up to the next power of base 2
                         any illegal values disable zero padding
-        half_bandwidth: half bandwidth in unit of fundamental frequency, a.k.a. NW preferably with integers
+        half_bandwidth: half bandwidth in units of fundamental frequency, a.k.a. NW preferably with integers
         n_taper:        number of tapering windows, a.k.a. K preferably with K < 2NW
         '''
         # prepare DPSSs
@@ -512,7 +526,7 @@ class Processing(Preprocessing):
         padding_ratio:  >= 1, ratio of the full frame length after zero padding to the window length
                         note that the final frame length will be rounded up to the next power of base 2
                         any illegal values disable zero padding
-        half_bandwidth: half bandwidth in unit of fundamental frequency, a.k.a. NW preferably with integers
+        half_bandwidth: half bandwidth in units of fundamental frequency, a.k.a. NW preferably with integers
         n_taper:        number of tapering windows, a.k.a. K preferably with K < 2NW
         '''
         # prepare DPSSs
@@ -587,30 +601,46 @@ class Processing(Preprocessing):
                         if "kaiser" is given, an additional argument of beta is expected
         '''
         if estimator == 'p': # periodogram
-            frequencies, times, spectrogram, n_dof = self.periodogram_2d(window_length, n_frame*n_average, n_offset, padding_ratio,
-                    kwargs["window"], kwargs["beta"])
-            n_frame = spectrogram.shape[0] // n_average
-            spectrogram = spectrogram[:n_frame*n_average].reshape(n_frame, n_average, -1)
-            # Bartlett's method for the boxcar window, Welch's method for all the others
-            if kwargs["window"] is not None:
-                spectrogram_suppl = self.periodogram_2d(window_length, n_frame*n_average-1, n_offset+window_length//2, padding_ratio,
-                        kwargs["window"], kwargs["beta"])[2]
+            try: # Welch's method
+                if kwargs["window"] == "kaiser":
+                    try:
+                        frequencies, times, spectrogram, n_dof = self.periodogram_2d(window_length, n_frame*n_average, n_offset, padding_ratio,
+                                kwargs["window"], kwargs["beta"])
+                        spectrogram_suppl = self.periodogram_2d(window_length, n_frame*n_average-1, n_offset+window_length//2, padding_ratio,
+                                kwargs["window"], kwargs["beta"])[2]
+                    except KeyError:
+                        raise ValueError("additional argument beta is empty!")
+                else:
+                    frequencies, times, spectrogram, n_dof = self.periodogram_2d(window_length, n_frame*n_average, n_offset, padding_ratio, kwargs["window"])
+                    spectrogram_suppl = self.periodogram_2d(window_length, n_frame*n_average-1, n_offset+window_length//2, padding_ratio, kwargs["window"])[2]
+                n_frame = spectrogram.shape[0] // n_average
+                spectrogram = spectrogram[:n_frame*n_average].reshape(n_frame, n_average, -1)
                 spectrogram_suppl = np.vstack( (spectrogram_suppl, np.empty(spectrogram.shape[-1])) ).reshape(n_frame, n_average, -1)[:,:-1,:]
                 spectrogram = np.hstack( (spectrogram, spectrogram_suppl) )
+            except KeyError: # Bartlett's method for the boxcar window
+                frequencies, times, spectrogram, n_dof = self.periodogram_2d(window_length, n_frame*n_average, n_offset, padding_ratio)
+                n_frame = spectrogram.shape[0] // n_average
+                spectrogram = spectrogram[:n_frame*n_average].reshape(n_frame, n_average, -1)
             return frequencies, times[::n_average], np.mean(spectrogram, axis=1), n_dof*n_average # kHz, s, V^2/kHz, 1
         elif estimator == 'm': # multitaper
-            frequencies, times, spectrogram, n_dof = self.multitaper_2d(window_length, n_frame*n_average, n_offset, padding_ratio,
-                    kwargs["half_bandwidth"], kwargs["n_taper"])
-            n_frame = spectrogram.shape[0] // n_average
-            spectrogram = spectrogram[:n_frame*n_average].reshape(n_frame, n_average, -1)
-            return frequencies, times[::n_average], np.mean(spectrogram, axis=1), n_dof*n_average # kHz, s, V^2/kHz, 1
+            try:
+                frequencies, times, spectrogram, n_dof = self.multitaper_2d(window_length, n_frame*n_average, n_offset, padding_ratio,
+                        kwargs["half_bandwidth"], kwargs["n_taper"])
+                n_frame = spectrogram.shape[0] // n_average
+                spectrogram = spectrogram[:n_frame*n_average].reshape(n_frame, n_average, -1)
+                return frequencies, times[::n_average], np.mean(spectrogram, axis=1), n_dof*n_average # kHz, s, V^2/kHz, 1
+            except KeyError as e:
+                raise ValueError("additional argument {:s} is empty!".format(e.args[0]))
         elif estimator == 'a': # adaptive multitaper
-            frequencies, times, spectrogram, n_dof = self.adaptive_multitaper_2d(window_length, n_frame*n_average, n_offset, padding_ratio,
-                    kwargs["half_bandwidth"], kwargs["n_taper"])
-            n_frame = spectrogram.shape[0] // n_average
-            spectrogram = spectrogram[:n_frame*n_average].reshape(n_frame, n_average, -1)
-            n_dof = n_dof[:n_frame*n_average].reshape(n_frame, n_average, -1)
-            return frequencies, times[::n_average], np.average(spectrogram, axis=1, weights=n_dof), np.sum(n_dof, axis=1) # kHz, s, V^2/kHz, 1
+            try:
+                frequencies, times, spectrogram, n_dof = self.adaptive_multitaper_2d(window_length, n_frame*n_average, n_offset, padding_ratio,
+                        kwargs["half_bandwidth"], kwargs["n_taper"])
+                n_frame = spectrogram.shape[0] // n_average
+                spectrogram = spectrogram[:n_frame*n_average].reshape(n_frame, n_average, -1)
+                n_dof = n_dof[:n_frame*n_average].reshape(n_frame, n_average, -1)
+                return frequencies, times[::n_average], np.average(spectrogram, axis=1, weights=n_dof), np.sum(n_dof, axis=1) # kHz, s, V^2/kHz, 1
+            except KeyError as e:
+                raise ValueError("additional argument {:s} is empty!".format(e.args[0]))
         else:
             raise ValueError("unrecognized identifier {:s} for the base estimator!".format(estimator))
 
