@@ -392,7 +392,7 @@ class Processing(Preprocessing):
             spectrogram[index:] = np.fft.fftshift(fft_part(signal), axes=-1) # V, complex-valued, orth-ordered Fourier transform
         return frequencies, times, spectrogram # Hz, s, V
 
-    def periodogram_2d(self, window_length=1000, n_frame=100, n_offset=0, padding_ratio=2, window=None, beta=None, **kwargs):
+    def periodogram_2d(self, window_length=1000, n_frame=100, n_offset=0, padding_ratio=2, window=None, beta=None):
         '''
         periodogram estimator for the spectral density estimation in 2D of the provided signal
         window_length:  length of the tapering window
