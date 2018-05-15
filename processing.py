@@ -258,9 +258,10 @@ class Processing(Preprocessing):
                     frequencies, _, spectrogram, n_dof = self.periodogram_2d(window_length, n_average, n_offset, padding_ratio, kwargs["window"])
                     spectrogram_suppl = self.periodogram_2d(window_length, n_average-1, n_offset+window_length//2, padding_ratio, kwargs["window"])[2]
                 spectrogram = np.vstack( (spectrogram, spectrogram_suppl[:spectrogram.shape[0]-1]) )
+                return (frequencies[:-1]+frequencies[1:])/2, np.mean(spectrogram, axis=0), n_dof*(2*n_average-1) # kHz, V^2/kHz, 1
             except KeyError: # Bartlett's method for the boxcar window
                 frequencies, _, spectrogram, n_dof = self.periodogram_2d(window_length, n_average, n_offset, padding_ratio)
-            return (frequencies[:-1]+frequencies[1:])/2, np.mean(spectrogram, axis=0), n_dof*n_average # kHz, V^2/kHz, 1
+                return (frequencies[:-1]+frequencies[1:])/2, np.mean(spectrogram, axis=0), n_dof*n_average # kHz, V^2/kHz, 1
         elif estimator == 'm': # multitaper
             try:
                 frequencies, _, spectrogram, n_dof = self.multitaper_2d(window_length, n_average, n_offset, padding_ratio,
@@ -617,11 +618,12 @@ class Processing(Preprocessing):
                 spectrogram = spectrogram[:n_frame*n_average].reshape(n_frame, n_average, -1)
                 spectrogram_suppl = np.vstack( (spectrogram_suppl, np.empty(spectrogram.shape[-1])) ).reshape(n_frame, n_average, -1)[:,:-1,:]
                 spectrogram = np.hstack( (spectrogram, spectrogram_suppl) )
+                return frequencies, times[::n_average], np.mean(spectrogram, axis=1), n_dof*(2*n_average-1) # kHz, s, V^2/kHz, 1
             except KeyError: # Bartlett's method for the boxcar window
                 frequencies, times, spectrogram, n_dof = self.periodogram_2d(window_length, n_frame*n_average, n_offset, padding_ratio)
                 n_frame = spectrogram.shape[0] // n_average
                 spectrogram = spectrogram[:n_frame*n_average].reshape(n_frame, n_average, -1)
-            return frequencies, times[::n_average], np.mean(spectrogram, axis=1), n_dof*n_average # kHz, s, V^2/kHz, 1
+                return frequencies, times[::n_average], np.mean(spectrogram, axis=1), n_dof*n_average # kHz, s, V^2/kHz, 1
         elif estimator == 'm': # multitaper
             try:
                 frequencies, times, spectrogram, n_dof = self.multitaper_2d(window_length, n_frame*n_average, n_offset, padding_ratio,
