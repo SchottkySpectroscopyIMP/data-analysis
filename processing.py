@@ -246,7 +246,9 @@ class Processing(Preprocessing):
         '''
         if estimator == 'p': # periodogram
             try: # Welch's method
-                if kwargs["window"] == "kaiser":
+                if kwargs["window"] == None:
+                    raise KeyError
+                elif kwargs["window"] == "kaiser":
                     try:
                         frequencies, _, spectrogram, n_dof = self.periodogram_2d(window_length, n_average, n_offset, padding_ratio,
                                 kwargs["window"], kwargs["beta"])
@@ -601,9 +603,12 @@ class Processing(Preprocessing):
                         if None, a rectangular window is implied
                         if "kaiser" is given, an additional argument of beta is expected
         '''
+        if window_length*n_frame*n_average > self.n_sample-n_offset or n_frame < 0: n_frame = (self.n_sample-n_offset) // (window_length*n_average)
         if estimator == 'p': # periodogram
             try: # Welch's method
-                if kwargs["window"] == "kaiser":
+                if kwargs["window"] == None:
+                    raise KeyError
+                elif kwargs["window"] == "kaiser":
                     try:
                         frequencies, times, spectrogram, n_dof = self.periodogram_2d(window_length, n_frame*n_average, n_offset, padding_ratio,
                                 kwargs["window"], kwargs["beta"])
@@ -614,22 +619,19 @@ class Processing(Preprocessing):
                 else:
                     frequencies, times, spectrogram, n_dof = self.periodogram_2d(window_length, n_frame*n_average, n_offset, padding_ratio, kwargs["window"])
                     spectrogram_suppl = self.periodogram_2d(window_length, n_frame*n_average-1, n_offset+window_length//2, padding_ratio, kwargs["window"])[2]
-                n_frame = spectrogram.shape[0] // n_average
-                spectrogram = spectrogram[:n_frame*n_average].reshape(n_frame, n_average, -1)
+                spectrogram = spectrogram.reshape(n_frame, n_average, -1)
                 spectrogram_suppl = np.vstack( (spectrogram_suppl, np.empty(spectrogram.shape[-1])) ).reshape(n_frame, n_average, -1)[:,:-1,:]
                 spectrogram = np.hstack( (spectrogram, spectrogram_suppl) )
                 return frequencies, times[::n_average], np.mean(spectrogram, axis=1), n_dof*(2*n_average-1) # kHz, s, V^2/kHz, 1
             except KeyError: # Bartlett's method for the boxcar window
                 frequencies, times, spectrogram, n_dof = self.periodogram_2d(window_length, n_frame*n_average, n_offset, padding_ratio)
-                n_frame = spectrogram.shape[0] // n_average
-                spectrogram = spectrogram[:n_frame*n_average].reshape(n_frame, n_average, -1)
+                spectrogram = spectrogram.reshape(n_frame, n_average, -1)
                 return frequencies, times[::n_average], np.mean(spectrogram, axis=1), n_dof*n_average # kHz, s, V^2/kHz, 1
         elif estimator == 'm': # multitaper
             try:
                 frequencies, times, spectrogram, n_dof = self.multitaper_2d(window_length, n_frame*n_average, n_offset, padding_ratio,
                         kwargs["half_bandwidth"], kwargs["n_taper"])
-                n_frame = spectrogram.shape[0] // n_average
-                spectrogram = spectrogram[:n_frame*n_average].reshape(n_frame, n_average, -1)
+                spectrogram = spectrogram.reshape(n_frame, n_average, -1)
                 return frequencies, times[::n_average], np.mean(spectrogram, axis=1), n_dof*n_average # kHz, s, V^2/kHz, 1
             except KeyError as e:
                 raise ValueError("additional argument {:s} is empty!".format(e.args[0]))
@@ -637,9 +639,8 @@ class Processing(Preprocessing):
             try:
                 frequencies, times, spectrogram, n_dof = self.adaptive_multitaper_2d(window_length, n_frame*n_average, n_offset, padding_ratio,
                         kwargs["half_bandwidth"], kwargs["n_taper"])
-                n_frame = spectrogram.shape[0] // n_average
-                spectrogram = spectrogram[:n_frame*n_average].reshape(n_frame, n_average, -1)
-                n_dof = n_dof[:n_frame*n_average].reshape(n_frame, n_average, -1)
+                spectrogram = spectrogram.reshape(n_frame, n_average, -1)
+                n_dof = n_dof.reshape(n_frame, n_average, -1)
                 return frequencies, times[::n_average], np.average(spectrogram, axis=1, weights=n_dof), np.sum(n_dof, axis=1) # kHz, s, V^2/kHz, 1
             except KeyError as e:
                 raise ValueError("additional argument {:s} is empty!".format(e.args[0]))
