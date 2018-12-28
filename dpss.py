@@ -2,8 +2,7 @@
 # −*− coding:utf-8 −*−
 
 import numpy as np
-from scipy import sparse
-from scipy.sparse import linalg
+from scipy.linalg import eigh_tridiagonal
 from scipy.linalg import toeplitz
 import matplotlib.pyplot as plt
 import pyfftw, multiprocessing
@@ -33,15 +32,7 @@ class DPSS(object):
         '''
         diag_main = ((self.N-1)/2-np.arange(self.N))**2 * np.cos(2*np.pi*self.W)
         diag_off = np.arange(1, self.N) * np.arange(self.N-1, 0, -1) / 2
-        B = sparse.diags([diag_main, diag_off, diag_off], [0, 1, -1])
-        dummy = 0
-        while True: # calculate a few more eigenvectors to prevent from instability of numerical calculation when sequence length is small
-            vals, vecs = linalg.eigsh(B, self.K+dummy)
-            if vals[dummy] < 0:
-                dummy += 1
-            else:
-                break
-        vecs = vecs[:,dummy:]
+        vecs = eigh_tridiagonal(diag_main, diag_off, select='i', select_range=(self.N-self.K,self.N-1))[1]
         self.vecs = (vecs * np.where(vecs[0,:]>0, 1, -1)).T[::-1] # normalized energy, polarity follows Slepian convention
         if eigenvalue:
             A = toeplitz(np.insert( np.sin(2*np.pi*self.W*np.arange(1,self.N))/(np.pi*np.arange(1,self.N)), 0, 2*self.W ))
