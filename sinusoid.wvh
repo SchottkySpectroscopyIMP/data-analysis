@@ -1,0 +1,12 @@
+{
+    "center frequency": 200000000.0,
+    "duration": 1,
+    "endian": "little",
+    "format": "int16",
+    "number of samples": 2621440,
+    "reference level": -30.0,
+    "resolution": 16,
+    "sampling rate": 1250000.0,
+    "span": 1000000.0,
+    "timestamp": "2000-01-01T00:00:00+0000"
+}
