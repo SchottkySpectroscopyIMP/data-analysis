@@ -12,7 +12,7 @@ from processing import Processing
 class LifeTime():
     def __init__(self, file_str, window_length, n_average):
 
-        self.file_folder = "/media/qwang/Seagate Backup Plus Drive/2018-12/"
+        self.file_folder = "/data/"
         self.file_str = file_str
             
         self.window_length = window_length
