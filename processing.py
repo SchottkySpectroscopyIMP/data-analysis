@@ -292,7 +292,6 @@ class Processing(Preprocessing):
         ax.set_xlabel("frequency − {:g} MHz [kHz]".format(self.center_frequency/1e6))
         ax.set_ylabel("power spectral density [arb. unit]")
         ax.set_title(self.fname)
-        plt.tight_layout(.5)
         plt.show()
 
     def spectrogram(self, window_length=1000, n_frame=100, n_offset=0, padding_ratio=2, window=None, beta=None):
@@ -661,7 +660,6 @@ class Processing(Preprocessing):
         cax = fig.colorbar(pcm, ax=ax)
         cax.set_label("power spectral density [arb. unit]")
         ax.set_title(self.fname)
-        plt.tight_layout(.5)
         plt.show()
 
     def confidence_band(self, sde, level, n_dof):
@@ -681,4 +679,4 @@ if __name__ == "__main__":
         print("Usage: {} path/to/file".format(__file__))
         sys.exit()
     processing = Processing(sys.argv[-1])
-    processing.plot_2d(*processing.adaptive_multitaper_2d(window_length=500, n_frame=1000, n_offset=0, padding_ratio=1, half_bandwidth=3, n_taper=4))
+    processing.plot_2d(*processing.adaptive_multitaper_2d(window_length=500, n_frame=1000, n_offset=0, padding_ratio=1, half_bandwidth=3, n_taper=4)[:-1])

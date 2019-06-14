@@ -125,7 +125,6 @@ class Preprocessing(object):
         axi.set_xlim([t.min(), t.max()])
         axi.set_xlabel("time [s]")
         axi.set_ylabel("quadrature")
-        plt.tight_layout(.5)
         plt.show()
 
     def diagnosis(self, n_point=None, draw=True):
