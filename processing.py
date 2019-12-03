@@ -99,7 +99,7 @@ class Processing(Preprocessing):
         dummy = pyfftw.empty_aligned(window_length)
         fft = pyfftw.builders.fft(dummy, n=n_point, overwrite_input=True, threads=self.n_thread)
         spectrum = np.fft.fftshift(fft(signal)) # V, complex-valued, orth-ordered Fourier transform
-        return frequencies, spectrum # Hz, V
+        return frequencies*1e-3, spectrum # kHz, V
 
     def periodogram_1d(self, window_length=1000, n_offset=0, padding_ratio=2, window=None, beta=None):
         '''
@@ -406,7 +406,7 @@ class Processing(Preprocessing):
             signal = super().load(window_length*n_frame, n_offset)[1].reshape(n_frame, window_length) * window_sequence
             index = spectrogram[~np.isnan(spectrogram[:,0]), 0].size
             spectrogram[index:] = np.fft.fftshift(fft_part(signal), axes=-1) # V, complex-valued, orth-ordered Fourier transform
-        return frequencies, times, spectrogram # Hz, s, V
+        return frequencies*1e-3, times, spectrogram # kHz, s, V
 
     def periodogram_2d(self, window_length=1000, n_frame=100, n_offset=0, padding_ratio=2, window=None, beta=None):
         '''

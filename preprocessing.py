@@ -106,10 +106,10 @@ class Preprocessing(object):
         times = (np.arange(size)*decimating_factor + offset) / self.sampling_rate # s
         if self.file_format == "wv":
             wvd = np.memmap('/'.join((self.fpath, self.fname[:-3]+"wvd")), dtype=self.data_format, offset=offset*2*self.data_format.itemsize, mode='r')
-            data = wvd[:2*size*decimating_factor].reshape(size,2*decimating_factor)[:,:2].flatten().astype("float64").view("complex128") / (2**(self.digitizing_depth-1) - 1) # V
+            data = wvd[:2*size*decimating_factor].reshape(size,2*decimating_factor)[:,:2].flatten().astype(float).view(complex) / (2**(self.digitizing_depth-1) - .5) # V
         else: # for tiq
             tiq = np.memmap('/'.join((self.fpath, self.fname)), dtype=self.data_format, offset=self.n_offset+offset*2*self.data_format.itemsize, mode='r')
-            data = tiq[:2*size*decimating_factor].reshape(size,2*decimating_factor)[:,:2].flatten().astype("float64").view("complex128") * self.scaling # V
+            data = tiq[:2*size*decimating_factor].reshape(size,2*decimating_factor)[:,:2].flatten().astype(float).view(complex) * self.scaling # V
         if draw:
             self.draw(times, data)
         else:
