@@ -2,7 +2,9 @@
 # −*− coding:utf-8 −*−
 
 import numpy as np
-from scipy.linalg import eigh_tridiagonal
+from scipy import sparse
+from scipy.sparse import linalg
+from scipy.signal import windows
 from scipy.linalg import toeplitz
 import matplotlib.pyplot as plt
 import pyfftw, multiprocessing
@@ -25,18 +27,30 @@ class DPSS(object):
         self.W = NW / N
         self.K = K
         self.gen_sequences(eigenvalue)
+            
 
     def gen_sequences(self, eigenvalue):
         '''
         generate the discrete prolate spheroidal sequences in the time domain
         '''
-        diag_main = ((self.N-1)/2-np.arange(self.N))**2 * np.cos(2*np.pi*self.W)
-        diag_off = np.arange(1, self.N) * np.arange(self.N-1, 0, -1) / 2
-        vecs = eigh_tridiagonal(diag_main, diag_off, select='i', select_range=(self.N-self.K,self.N-1))[1]
-        self.vecs = (vecs * np.where(vecs[0,:]>0, 1, -1)).T[::-1] # normalized energy, polarity follows Slepian convention
-        if eigenvalue:
-            A = toeplitz(np.insert( np.sin(2*np.pi*self.W*np.arange(1,self.N))/(np.pi*np.arange(1,self.N)), 0, 2*self.W ))
-            self.vals = np.diag(self.vecs @ A @ self.vecs.T) # @ is matrix multiplication
+        if self.N > 1024:
+            self.vecs, self.vals = windows.dpss(self.N, self.N*self.W, self.K, return_ratios=True)
+        else:
+            diag_main = ((self.N-1)/2-np.arange(self.N))**2 * np.cos(2*np.pi*self.W)
+            diag_off = np.arange(1, self.N) * np.arange(self.N-1, 0, -1) / 2
+            B = sparse.diags([diag_main, diag_off, diag_off], [0, 1, -1])
+            dummy = 0
+            while True: # calculate a few more eigenvectors to prevent from instability of numerical calculation when sequence length is small
+                vals, vecs = linalg.eigsh(B, self.K+dummy)
+                if vals[dummy] < 0:
+                    dummy += 1
+                else:
+                    break
+            vecs = vecs[:,dummy:]
+            self.vecs = (vecs * np.where(vecs[0,:]>0, 1, -1)).T[::-1] # normalized energy, polarity follows Slepian convention
+            if eigenvalue:
+                A = toeplitz(np.insert( np.sin(2*np.pi*self.W*np.arange(1,self.N))/(np.pi*np.arange(1,self.N)), 0, 2*self.W ))
+                self.vals = np.diag(self.vecs @ A @ self.vecs.T) # @ is matrix multiplication
 
     def plot_sequences(self):
         plt.close("all")
