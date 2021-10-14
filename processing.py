@@ -4,6 +4,7 @@
 import numpy as np
 from scipy import linalg
 from scipy.stats import chi2
+from scipy.signal import windows
 import matplotlib.pyplot as plt
 import sys, pyfftw, multiprocessing
 from preprocessing import Preprocessing
@@ -45,9 +46,9 @@ class Processing(Preprocessing):
             if beta is None:
                 raise ValueError("additional argument beta is empty!")
             else:
-                window_sequence = np.kaiser(window_length, beta)
+                window_sequence = windows.kaiser(window_length, beta)
         else:
-            window_function = getattr(np, window)
+            window_function = getattr(windows, window)
             window_sequence = window_function(window_length)
         # round the padded frame length up to the next radix-2 power
         n_point = int( np.power(2, np.ceil(np.log2(window_length*padding_ratio))) ) if padding_ratio >= 1 else window_length
@@ -84,9 +85,9 @@ class Processing(Preprocessing):
             if beta is None:
                 raise ValueError("additional argument beta is empty!")
             else:
-                window_sequence = np.kaiser(window_length, beta)
+                window_sequence = windows.kaiser(window_length, beta)
         else:
-            window_function = getattr(np, window)
+            window_function = getattr(windows, window)
             window_sequence = window_function(window_length)
         # round the padded frame length up to the next radix-2 power
         n_point = int( np.power(2, np.ceil(np.log2(window_length*padding_ratio))) ) if padding_ratio >= 1 else window_length
@@ -120,9 +121,9 @@ class Processing(Preprocessing):
             if beta is None:
                 raise ValueError("additional argument beta is empty!")
             else:
-                window_sequence = np.kaiser(window_length, beta)
+                window_sequence = windows.kaiser(window_length, beta)
         else:
-            window_function = getattr(np, window)
+            window_function = getattr(windows, window)
             window_sequence = window_function(window_length)
         # round the padded frame length up to the next radix-2 power
         n_point = int( np.power(2, np.ceil(np.log2(window_length*padding_ratio))) ) if padding_ratio >= 1 else window_length
@@ -314,9 +315,9 @@ class Processing(Preprocessing):
             if beta is None:
                 raise ValueError("additional argument beta is empty!")
             else:
-                window_sequence = np.kaiser(window_length, beta)
+                window_sequence = windows.kaiser(window_length, beta)
         else:
-            window_function = getattr(np, window)
+            window_function = getattr(windows, window)
             window_sequence = window_function(window_length)
         # round the padded frame length up to the next radix-2 power
         n_point = int( np.power(2, np.ceil(np.log2(window_length*padding_ratio))) ) if padding_ratio >= 1 else window_length
@@ -372,9 +373,9 @@ class Processing(Preprocessing):
             if beta is None:
                 raise ValueError("additional argument beta is empty!")
             else:
-                window_sequence = np.kaiser(window_length, beta)
+                window_sequence = windows.kaiser(window_length, beta)
         else:
-            window_function = getattr(np, window)
+            window_function = getattr(windows, window)
             window_sequence = window_function(window_length)
         # round the padded frame length up to the next radix-2 power
         n_point = int( np.power(2, np.ceil(np.log2(window_length*padding_ratio))) ) if padding_ratio >= 1 else window_length
@@ -428,9 +429,9 @@ class Processing(Preprocessing):
             if beta is None:
                 raise ValueError("additional argument beta is empty!")
             else:
-                window_sequence = np.kaiser(window_length, beta)
+                window_sequence = windows.kaiser(window_length, beta)
         else:
-            window_function = getattr(np, window)
+            window_function = getattr(windows, window)
             window_sequence = window_function(window_length)
         # round the padded frame length up to the next radix-2 power
         n_point = int( np.power(2, np.ceil(np.log2(window_length*padding_ratio))) ) if padding_ratio >= 1 else window_length
